@@ -280,6 +280,7 @@ function setupMaze(size) {
 
 			if(!visitedCell) {
 				visited.push(currentCell);
+				console.log(size, nextCell);
 				currentCell = removeSides(currentCell, nextCell.dir, 0);
 				currentCell = maze.cells.find((cell) => {
 					return cell.x === nextCell.x && cell.y === nextCell.y;
@@ -385,7 +386,7 @@ function removeSides(cell, dir, second) {
 		}
 	}
 
-	console.log('removeSides' , cell, dir);
+	//console.log('removeSides' , cell, dir);
 	return cell;
 }
 
