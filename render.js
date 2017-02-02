@@ -11,34 +11,35 @@ var mazeArray = {
 	vertices: [],
 	entry: [],
 	exit: [],
-	path: []
+	visited: []
 }
 
 function main() {
 	let canvas = document.getElementById("gl-canvas");
-	gl = WebGLUtils.setupWebGL (canvas, null);
+	gl = WebGLUtils.setupWebGL(canvas, null);
 	let button = document.getElementById("gen");
 	sizeInput = document.getElementById("size");
 	outMessage = document.getElementById("msg");
 	button.addEventListener("click", buttonClicked);
 	ShaderUtils.loadFromFile(gl, "vshader.glsl", "fshader.glsl")
-	.then (program => {
-		gl.useProgram(program);
+		.then(program => {
+			gl.useProgram(program);
 
-		prog = program;
+			prog = program;
 
-		render();
-	});
+			render();
+		});
 }
 
 function drawScene() {
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.viewport(0, 0, 512, 512);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
+
 	drawMaze();
 	drawEntry();
 	drawExit();
+	drawVisited();
 }
 
 function drawMaze() {
@@ -52,15 +53,15 @@ function drawMaze() {
 	// obtain a reference to the shader variable (on the GPU)
 	posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
-	
+
 	gl.vertexAttribPointer(posAttr,
-		2,         /* number of components per attribute, in our case (x,y) */
-		gl.FLOAT,  /* type of each attribute */
-		false,     /* does not require normalization */
-		0,         /* stride: number of bytes between the beginning of consecutive attributes */
-		0);        /* the offset (in bytes) to the first component in the attribute array */
+		2, /* number of components per attribute, in our case (x,y) */
+		gl.FLOAT, /* type of each attribute */
+		false, /* does not require normalization */
+		0, /* stride: number of bytes between the beginning of consecutive attributes */
+		0); /* the offset (in bytes) to the first component in the attribute array */
 	gl.drawArrays(gl.LINES,
-		0,  /* starting index in the array */
+		0, /* starting index in the array */
 		mazeArray.vertices.length / 2); /* we are drawing four vertices */
 }
 
@@ -75,15 +76,15 @@ function drawEntry() {
 	// obtain a reference to the shader variable (on the GPU)
 	posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
-	
+
 	gl.vertexAttribPointer(posAttr,
-		2,         /* number of components per attribute, in our case (x,y) */
-		gl.FLOAT,  /* type of each attribute */
-		false,     /* does not require normalization */
-		0,         /* stride: number of bytes between the beginning of consecutive attributes */
-		0);        /* the offset (in bytes) to the first component in the attribute array */
+		2, /* number of components per attribute, in our case (x,y) */
+		gl.FLOAT, /* type of each attribute */
+		false, /* does not require normalization */
+		0, /* stride: number of bytes between the beginning of consecutive attributes */
+		0); /* the offset (in bytes) to the first component in the attribute array */
 	gl.drawArrays(gl.LINE_STRIP,
-		0,  /* starting index in the array */
+		0, /* starting index in the array */
 		mazeArray.entry.length / 2); /* we are drawing four vertices */
 }
 
@@ -98,16 +99,39 @@ function drawExit() {
 	// obtain a reference to the shader variable (on the GPU)
 	posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
-	
+
 	gl.vertexAttribPointer(posAttr,
-		2,         /* number of components per attribute, in our case (x,y) */
-		gl.FLOAT,  /* type of each attribute */
-		false,     /* does not require normalization */
-		0,         /* stride: number of bytes between the beginning of consecutive attributes */
-		0);        /* the offset (in bytes) to the first component in the attribute array */
+		2, /* number of components per attribute, in our case (x,y) */
+		gl.FLOAT, /* type of each attribute */
+		false, /* does not require normalization */
+		0, /* stride: number of bytes between the beginning of consecutive attributes */
+		0); /* the offset (in bytes) to the first component in the attribute array */
 	gl.drawArrays(gl.LINE_STRIP,
-		0,  /* starting index in the array */
+		0, /* starting index in the array */
 		mazeArray.exit.length / 2); /* we are drawing four vertices */
+}
+
+function drawVisited() {
+	// create a buffer
+	vertexBuff = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
+
+	// copy the vertices data
+	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(mazeArray.visited), gl.STATIC_DRAW);
+
+	// obtain a reference to the shader variable (on the GPU)
+	posAttr = gl.getAttribLocation(prog, "vertexPos");
+	gl.enableVertexAttribArray(posAttr);
+
+	gl.vertexAttribPointer(posAttr,
+		2, /* number of components per attribute, in our case (x,y) */
+		gl.FLOAT, /* type of each attribute */
+		false, /* does not require normalization */
+		0, /* stride: number of bytes between the beginning of consecutive attributes */
+		0); /* the offset (in bytes) to the first component in the attribute array */
+	gl.drawArrays(gl.LINE_STRIP,
+		0, /* starting index in the array */
+		mazeArray.visited.length / 2); /* we are drawing four vertices */
 }
 
 function render() {
@@ -136,8 +160,8 @@ function setupMaze(size) {
 	};
 
 	//initialize the maze with cells
-	for(let i = 0; i < size; i++) {
-		for(let j = 0; j < size; j++) {
+	for (let i = 0; i < size; i++) {
+		for (let j = 0; j < size; j++) {
 			let cell = {
 				x: i,
 				y: j,
@@ -146,14 +170,14 @@ function setupMaze(size) {
 				topSide: [],
 				bottomSide: []
 			}
-			cell.leftSide.push(i, j);
-			cell.leftSide.push(i + 1, j);
-			cell.topSide.push(i + 1, j);
-			cell.topSide.push(i + 1, j + 1);
-			cell.rightSide.push(i + 1, j + 1);
-			cell.rightSide.push(i, j + 1);
-			cell.bottomSide.push(i, j + 1);
 			cell.bottomSide.push(i, j);
+			cell.bottomSide.push(i + 1, j);
+			cell.rightSide.push(i + 1, j);
+			cell.rightSide.push(i + 1, j + 1);
+			cell.topSide.push(i + 1, j + 1);
+			cell.topSide.push(i, j + 1);
+			cell.leftSide.push(i, j + 1);
+			cell.leftSide.push(i, j);
 
 			maze.cells.push(cell);
 		}
@@ -168,53 +192,38 @@ function setupMaze(size) {
 		y: null,
 		sides: []
 	};
-
 	// 0 is a horizontal and 1 is vertical
-		switch(entrySide) {
+	switch (entrySide) {
 		case 0:
 			entryCell.x = entryPoint;
 			entryCell.y = 0;
-			entryCell.sides.push(entryPoint, 0);
-			entryCell.sides.push(entryPoint + 1, 0);
-			entryCell.sides.push(entryPoint + .5, 1);
-			entryCell.sides.push(entryPoint, 0);
-			entryCell.sides.push(entryPoint, .5);
 			break;
 		case 1:
 			entryCell.x = entryPoint;
-			entryCell.y = size;
-			entryCell.sides.push(entryPoint, size);
-			entryCell.sides.push(entryPoint + 1, size);
-			entryCell.sides.push(entryPoint + .5, size - 1);
-			entryCell.sides.push(entryPoint, size);
-			entryCell.sides.push(entryPoint, .5);
+			entryCell.y = size - 1;
 			break;
 		case 2:
 			entryCell.x = 0;
 			entryCell.y = entryPoint;
-			entryCell.sides.push(0, entryPoint);
-			entryCell.sides.push(0, entryPoint + 1);
-			entryCell.sides.push(1, entryPoint + .5);
-			entryCell.sides.push(0, entryPoint);
-			entryCell.sides.push(.5, entryPoint);
 			break;
 		case 3:
-			entryCell.x = size;
+			entryCell.x = size - 1;
 			entryCell.y = entryPoint;
-			entryCell.sides.push(size, entryPoint);
-			entryCell.sides.push(size, entryPoint + 1);
-			entryCell.sides.push(size - 1, entryPoint + .5);
-			entryCell.sides.push(size, entryPoint);
-			entryCell.sides.push(.5, entryPoint);
 			break;
 	}
+
+	entryCell.sides.push(entryCell.x + .5, entryCell.y);
+	entryCell.sides.push(entryCell.x, entryCell.y + .5);
+	entryCell.sides.push(entryCell.x + .5, entryCell.y + 1);
+	entryCell.sides.push(entryCell.x + 1, entryCell.y + .5);
+	entryCell.sides.push(entryCell.x + .5, entryCell.y);
 
 	maze.entryCell = entryCell;
 
 	let exitPoint = getEndPoint(size);
-	let exitSide =  entrySide;
+	let exitSide = entrySide;
 
-	while(exitSide === entrySide) {
+	while (exitSide === entrySide) {
 		exitSide = getEndPointOrientation();
 	}
 
@@ -224,137 +233,139 @@ function setupMaze(size) {
 		sides: []
 	};
 
-	switch(exitSide) {
+	switch (exitSide) {
 		case 0:
 			exitCell.x = exitPoint;
 			exitCell.y = 0;
-			exitCell.sides.push(exitPoint, 0);
-			exitCell.sides.push(exitPoint + 1, 1);
-			exitCell.sides.push(exitPoint + 1, 0);
-			exitCell.sides.push(exitPoint, 1);
-			exitCell.sides.push(exitPoint, 0);
 			break;
 		case 1:
 			exitCell.x = exitPoint;
-			exitCell.y = size;
-			exitCell.sides.push(exitPoint, size);
-			exitCell.sides.push(exitPoint + 1, size - 1);
-			exitCell.sides.push(exitPoint + 1, size);
-			exitCell.sides.push(exitPoint, size - 1);
-			exitCell.sides.push(exitPoint, 0);
+			exitCell.y = size - 1;
 			break;
 		case 2:
 			exitCell.x = 0;
 			exitCell.y = exitPoint;
-			exitCell.sides.push(0, exitPoint);
-			exitCell.sides.push(1, exitPoint + 1);
-			exitCell.sides.push(0, exitPoint + 1);
-			exitCell.sides.push(1, exitPoint);
-			exitCell.sides.push(0, exitPoint);
 			break;
 		case 3:
-			exitCell.x = size;
+			exitCell.x = size - 1;
 			exitCell.y = exitPoint;
-			exitCell.sides.push(size, exitPoint);
-			exitCell.sides.push(size - 1, exitPoint + 1);
-			exitCell.sides.push(size, exitPoint + 1);
-			exitCell.sides.push(size - 1, exitPoint);
-			exitCell.sides.push(0, exitPoint);
 			break;
 	}
 
+	exitCell.sides.push(exitCell.x + .5, exitCell.y);
+	exitCell.sides.push(exitCell.x, exitCell.y + .5);
+	exitCell.sides.push(exitCell.x + .5, exitCell.y + 1);
+	exitCell.sides.push(exitCell.x + 1, exitCell.y + .5);
+	exitCell.sides.push(exitCell.x + .5, exitCell.y);
+
 	maze.exitCell = exitCell;
-	console.log(maze);
-	
+	//console.log(maze);
+
 	//create path through the maze
-	let currentCell = maze.entryCell;
 	let visited = [];
+	let currentCell = findCell(maze, maze.entryCell.x, maze.entryCell.y);
+	visited.push(currentCell);
+	let backTrackCounter = 1;
 
-	while(visited.length !== maze.cells.length) {
-		let nextCell = getNextCell(currentCell, size);
+	while (visited.length !== maze.cells.length) {
+		let nextCell = getNextCell(visited, currentCell, size);
+		if (nextCell) {
+			currentCell = removeSides(currentCell, nextCell.dir, 0);
 
-		if(nextCell) {
+			currentCell = maze.cells.find((cell) => {
+				return cell.x === nextCell.x && cell.y === nextCell.y;
+			});
+
+			currentCell = removeSides(currentCell, nextCell.dir, 1);
+			visited.push(currentCell);
+			backTrackCounter = 1;
+		} else {
+			currentCell = visited[visited.length - backTrackCounter];
+			//console.log('counter', visited.length - backTrackCounter, currentCell.x, currentCell.y);
+			backTrackCounter++;
+		}
+	}
+
+	return convertToVertices(maze, size, visited);
+}
+
+function getNextCell(visited, currentCell, size) {
+	let nextCell = null;
+	let possibleDirections = [0, 1, 2, 3];
+	let currentRow = null;
+	let nextRow = null;
+
+	while (nextCell == null && possibleDirections.length > 0) {
+		let direction = possibleDirections[getRandomInt(0, possibleDirections.length - 1)];
+		switch (direction) {
+			case 0: // down
+				if (currentCell.y - 1 >= 0) {
+					nextCell = {
+						x: currentCell.x,
+						y: currentCell.y - 1,
+						dir: 0,
+						direction: 'down'
+					};
+				}
+
+				possibleDirections.splice(possibleDirections.indexOf(0), 1);
+				break;
+			case 1: // up
+				if (currentCell.y + 1 < size) {
+					nextCell = {
+						x: currentCell.x,
+						y: currentCell.y + 1,
+						dir: 1,
+						direction: 'up'
+					};
+				}
+
+				possibleDirections.splice(possibleDirections.indexOf(1), 1);
+				break;
+			case 2: // left
+				if (currentCell.x - 1 >= 0) {
+					nextCell = {
+						x: currentCell.x - 1,
+						y: currentCell.y,
+						dir: 2,
+						direction: 'left'
+					};
+				}
+
+				possibleDirections.splice(possibleDirections.indexOf(2), 1);
+				break;
+			case 3: // right
+				if (currentCell.x + 1 < size) {
+					nextCell = {
+						x: currentCell.x + 1,
+						y: currentCell.y,
+						dir: 3,
+						direction: 'right'
+					};
+				}
+
+				possibleDirections.splice(possibleDirections.indexOf(3), 1);
+				break;
+		}
+
+		if (nextCell) {
 			let visitedCell = visited.find((cell) => {
 				return cell.x === nextCell.x && cell.y === nextCell.y;
 			});
 
-			if(!visitedCell) {
-				visited.push(currentCell);
-				console.log(size, nextCell);
-				currentCell = removeSides(currentCell, nextCell.dir, 0);
-				currentCell = maze.cells.find((cell) => {
-					return cell.x === nextCell.x && cell.y === nextCell.y;
-				});
-				currentCell = removeSides(currentCell, nextCell.dir, 1);
-			} else {
+			if (!visitedCell) {
 				break;
-			}
-		}		
-	}
-
-	console.log(visited);
-	
-	return convertToVertices(maze, size);
-}
-
-function getNextCell(currentCell, size) {
-	let nextCell = null;
-	let direction = getRandomInt(0, 4);
-	let currentRow = null;
-	let nextRow = null;
-
-	switch (direction) {
-		case 0: // down
-			if(currentCell.x - 1 >= 0) {
-				nextCell = {
-					x: currentCell.x - 1,
-					y: currentCell.y,
-					dir: 0
-				};
 			} else {
-				return nextCell;
+				nextCell = null;
 			}
-			break;
-		case 1: // up
-			if(currentCell.x + 1 < size) {
-				nextCell = {
-					x: currentCell.x + 1,
-					y: currentCell.y,
-					dir: 1
-				};
-			} else {
-				return nextCell;
-			}
-			break;
-		case 2: // left
-			if(currentCell.y - 1 >= 0) {
-				nextCell = {
-					x: currentCell.x,
-					y: currentCell.y - 1,
-					dir: 2
-				};
-			} else {
-				return nextCell;
-			}
-			break;
-		case 3: // right
-			if(currentCell.y + 1 < size) {
-				nextCell = {
-					x: currentCell.x,
-					y: currentCell.y + 1,
-					dir: 3
-				};
-			} else {
-				return nextCell;
-			}
-			break;
+		}
 	}
 
 	return nextCell;
 }
 
 function removeSides(cell, dir, second) {
-	if(second) {
+	if (second) {
 		switch (dir) {
 			case 0: // up
 				cell.topSide = [];
@@ -381,12 +392,11 @@ function removeSides(cell, dir, second) {
 				cell.leftSide = [];
 				break;
 			case 3: // right
-				cell.rigthSide = [];
+				cell.rightSide = [];
 				break;
 		}
 	}
 
-	//console.log('removeSides' , cell, dir);
 	return cell;
 }
 
@@ -411,36 +421,49 @@ function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function convertToVertices(maze, size) {
+function findCell(maze, x, y) {
+	let cell = maze.cells.find((cell) => {
+		return cell.x === x && cell.y === y;
+	});
+
+	return cell;
+}
+
+function convertToVertices(maze, size, visited) {
 	let convertedMaze = {
 		vertices: [],
 		entry: [],
 		exit: [],
-		path: []
+		visited: []
 	};
 
-	for(let i = 0; i < maze.cells.length; i++) {
-		for(let j = 0; j < maze.cells[i].leftSide.length; j++) {
-			convertedMaze.vertices.push(convertVertex(maze.cells[i].leftSide[j], size));
+	for (let i = 0; i < maze.cells.length; i++) {
+		for (let j = 0; j < maze.cells[i].leftSide.length; j++) {
+			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].leftSide[j], size));
 		}
-		for(let j = 0; j < maze.cells[i].rightSide.length; j++) {
-			convertedMaze.vertices.push(convertVertex(maze.cells[i].rightSide[j], size));
+		for (let j = 0; j < maze.cells[i].rightSide.length; j++) {
+			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].rightSide[j], size));
 		}
-		for(let j = 0; j < maze.cells[i].topSide.length; j++) {
-			convertedMaze.vertices.push(convertVertex(maze.cells[i].topSide[j], size));
+		for (let j = 0; j < maze.cells[i].topSide.length; j++) {
+			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].topSide[j], size));
 		}
-		for(let j = 0; j < maze.cells[i].bottomSide.length; j++) {
-			convertedMaze.vertices.push(convertVertex(maze.cells[i].bottomSide[j], size));
+		for (let j = 0; j < maze.cells[i].bottomSide.length; j++) {
+			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].bottomSide[j], size));
 		}
 	}
 
-	for(let i = 0; i < maze.entryCell.sides.length; i++) {
-		convertedMaze.entry.push(convertVertex(maze.entryCell.sides[i], size));
+	for (let i = 0; i < maze.entryCell.sides.length; i++) {
+		convertedMaze.entry.push(.9 * convertVertex(maze.entryCell.sides[i], size));
 	}
 
-	for(let i = 0; i < maze.exitCell.sides.length; i++) {
-		convertedMaze.exit.push(convertVertex(maze.exitCell.sides[i], size));
+	for (let i = 0; i < maze.exitCell.sides.length; i++) {
+		convertedMaze.exit.push(.9 * convertVertex(maze.exitCell.sides[i], size));
 	}
 
+	// for(let i = 0; i < visited.length; i++) {
+	// 	convertedMaze.visited.push(.9 * convertVertex(visited[i].x  + .5, size));
+	// 	convertedMaze.visited.push(.9 * convertVertex(visited[i].y + .5, size));
+	// }
+	
 	return convertedMaze;
 }
