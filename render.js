@@ -18,9 +18,11 @@ function main() {
 	let canvas = document.getElementById("gl-canvas");
 	gl = WebGLUtils.setupWebGL(canvas, null);
 	let button = document.getElementById("gen");
+	let button2 = document.getElementById("solve");
 	sizeInput = document.getElementById("size");
 	outMessage = document.getElementById("msg");
-	button.addEventListener("click", buttonClicked);
+	button.addEventListener("click", generateMaze);
+	button2.addEventListener("click", solveMaze);
 	ShaderUtils.loadFromFile(gl, "vshader.glsl", "fshader.glsl")
 		.then(program => {
 			gl.useProgram(program);
@@ -39,99 +41,118 @@ function drawScene() {
 	drawMaze();
 	drawEntry();
 	drawExit();
-	drawVisited();
+	//drawPath();
 }
 
 function drawMaze() {
 	// create a buffer
-	vertexBuff = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
-
-	// copy the vertices data
-	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(mazeArray.vertices), gl.STATIC_DRAW);
+	let mazeBuff = makeMaze(gl, mazeArray.vertices);
 
 	// obtain a reference to the shader variable (on the GPU)
 	posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
+	let colAttr = gl.getAttribLocation(prog, "vertexCol");
+    gl.enableVertexAttribArray(colAttr);
 
+	gl.bindBuffer(gl.ARRAY_BUFFER, mazeBuff.position);
 	gl.vertexAttribPointer(posAttr,
 		2, /* number of components per attribute, in our case (x,y) */
 		gl.FLOAT, /* type of each attribute */
 		false, /* does not require normalization */
 		0, /* stride: number of bytes between the beginning of consecutive attributes */
 		0); /* the offset (in bytes) to the first component in the attribute array */
+	gl.bindBuffer(gl.ARRAY_BUFFER, mazeBuff.color);
+	gl.vertexAttribPointer(colAttr, 4, gl.FLOAT, false, 0, 0);
 	gl.drawArrays(gl.LINES,
 		0, /* starting index in the array */
 		mazeArray.vertices.length / 2); /* we are drawing four vertices */
 }
 
+function makeMaze(gl, vertices, color) {
+	let vertexBuff = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertices), gl.STATIC_DRAW);
+
+	let colors = [];
+
+    for(let i = 0; i < vertices.length; i++) {
+    	colors.push(160.0/255.0, 170.0/255.0, 17.0/255.0, 1.0); // Blue
+    }
+    
+    let cBuff = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuff);
+    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(colors), gl.STATIC_DRAW);
+
+    return {"position" : vertexBuff, "color" : cBuff};
+}
+
 function drawEntry() {
 	// create a buffer
-	vertexBuff = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
-
-	// copy the vertices data
-	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(mazeArray.entry), gl.STATIC_DRAW);
-
+	let diamondBuff = makeDiamond(gl, mazeArray.entry, 'green');
 	// obtain a reference to the shader variable (on the GPU)
-	posAttr = gl.getAttribLocation(prog, "vertexPos");
+	let posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
+    let colAttr = gl.getAttribLocation(prog, "vertexCol");
+    gl.enableVertexAttribArray(colAttr);
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, diamondBuff.position);
 	gl.vertexAttribPointer(posAttr,
 		2, /* number of components per attribute, in our case (x,y) */
 		gl.FLOAT, /* type of each attribute */
 		false, /* does not require normalization */
 		0, /* stride: number of bytes between the beginning of consecutive attributes */
 		0); /* the offset (in bytes) to the first component in the attribute array */
+	gl.bindBuffer(gl.ARRAY_BUFFER, diamondBuff.color);
+	gl.vertexAttribPointer(colAttr, 4, gl.FLOAT, false, 0, 0);
 	gl.drawArrays(gl.LINE_STRIP,
 		0, /* starting index in the array */
 		mazeArray.entry.length / 2); /* we are drawing four vertices */
 }
 
+
 function drawExit() {
 	// create a buffer
-	vertexBuff = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
-
-	// copy the vertices data
-	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(mazeArray.exit), gl.STATIC_DRAW);
-
+	let diamondBuff = makeDiamond(gl, mazeArray.exit, 'red');
 	// obtain a reference to the shader variable (on the GPU)
-	posAttr = gl.getAttribLocation(prog, "vertexPos");
+	let posAttr = gl.getAttribLocation(prog, "vertexPos");
 	gl.enableVertexAttribArray(posAttr);
+    let colAttr = gl.getAttribLocation(prog, "vertexCol");
+    gl.enableVertexAttribArray(colAttr);
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, diamondBuff.position);
 	gl.vertexAttribPointer(posAttr,
 		2, /* number of components per attribute, in our case (x,y) */
 		gl.FLOAT, /* type of each attribute */
 		false, /* does not require normalization */
 		0, /* stride: number of bytes between the beginning of consecutive attributes */
 		0); /* the offset (in bytes) to the first component in the attribute array */
+	gl.bindBuffer(gl.ARRAY_BUFFER, diamondBuff.color);
+	gl.vertexAttribPointer(colAttr, 4, gl.FLOAT, false, 0, 0);
 	gl.drawArrays(gl.LINE_STRIP,
 		0, /* starting index in the array */
 		mazeArray.exit.length / 2); /* we are drawing four vertices */
 }
 
-function drawVisited() {
-	// create a buffer
-	vertexBuff = gl.createBuffer();
+function makeDiamond(gl, vertices,  color) {
+	let vertexBuff = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuff);
+	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(vertices), gl.STATIC_DRAW);
 
-	// copy the vertices data
-	gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(mazeArray.visited), gl.STATIC_DRAW);
+	let colors = [];
 
-	// obtain a reference to the shader variable (on the GPU)
-	posAttr = gl.getAttribLocation(prog, "vertexPos");
-	gl.enableVertexAttribArray(posAttr);
+    for(let i = 0; i < vertices.length; i++) {
+    	if(color === 'green') {
+    		colors.push(0.0, 1.0, 0.0, 1.0); // Green
+    	} else {
+    		colors.push(1.0, 0.0, 0.0, 1.0); // Red
+    	}
+    }
+    
+    let cBuff = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuff);
+    gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(colors), gl.STATIC_DRAW);
 
-	gl.vertexAttribPointer(posAttr,
-		2, /* number of components per attribute, in our case (x,y) */
-		gl.FLOAT, /* type of each attribute */
-		false, /* does not require normalization */
-		0, /* stride: number of bytes between the beginning of consecutive attributes */
-		0); /* the offset (in bytes) to the first component in the attribute array */
-	gl.drawArrays(gl.LINE_STRIP,
-		0, /* starting index in the array */
-		mazeArray.visited.length / 2); /* we are drawing four vertices */
+    return {"position" : vertexBuff, "color" : cBuff};
 }
 
 function render() {
@@ -139,14 +160,13 @@ function render() {
 	requestAnimationFrame(render);
 }
 
-function buttonClicked() {
+function generateMaze() {
 	let sz = sizeInput.valueAsNumber;
 	if (!sz) {
 		outMessage.innerHTML = "Must set size in the input box";
 	} else {
 		outMessage.innerHTML = "I have to generate a maze of size " + sz + "x" + sz;
 		mazeArray = setupMaze(sz);
-		console.log(mazeArray);
 	}
 }
 
@@ -212,11 +232,11 @@ function setupMaze(size) {
 			break;
 	}
 
-	entryCell.sides.push(entryCell.x + .5, entryCell.y);
-	entryCell.sides.push(entryCell.x, entryCell.y + .5);
-	entryCell.sides.push(entryCell.x + .5, entryCell.y + 1);
-	entryCell.sides.push(entryCell.x + 1, entryCell.y + .5);
-	entryCell.sides.push(entryCell.x + .5, entryCell.y);
+	entryCell.sides.push(entryCell.x + .5, entryCell.y + .25);
+	entryCell.sides.push(entryCell.x + .25, entryCell.y + .5);
+	entryCell.sides.push(entryCell.x + .5, entryCell.y + .75);
+	entryCell.sides.push(entryCell.x + .75, entryCell.y + .5);
+	entryCell.sides.push(entryCell.x + .5, entryCell.y + .25);
 
 	maze.entryCell = entryCell;
 
@@ -252,14 +272,13 @@ function setupMaze(size) {
 			break;
 	}
 
-	exitCell.sides.push(exitCell.x + .5, exitCell.y);
-	exitCell.sides.push(exitCell.x, exitCell.y + .5);
-	exitCell.sides.push(exitCell.x + .5, exitCell.y + 1);
-	exitCell.sides.push(exitCell.x + 1, exitCell.y + .5);
-	exitCell.sides.push(exitCell.x + .5, exitCell.y);
+	exitCell.sides.push(exitCell.x + .5, exitCell.y + .25);
+	exitCell.sides.push(exitCell.x + .25, exitCell.y + .5);
+	exitCell.sides.push(exitCell.x + .5, exitCell.y + .75);
+	exitCell.sides.push(exitCell.x + .75, exitCell.y + .5);
+	exitCell.sides.push(exitCell.x + .5, exitCell.y + .25);
 
 	maze.exitCell = exitCell;
-	//console.log(maze);
 
 	//create path through the maze
 	let visited = [];
@@ -281,7 +300,6 @@ function setupMaze(size) {
 			backTrackCounter = 1;
 		} else {
 			currentCell = visited[visited.length - backTrackCounter];
-			//console.log('counter', visited.length - backTrackCounter, currentCell.x, currentCell.y);
 			backTrackCounter++;
 		}
 	}
@@ -434,30 +452,31 @@ function convertToVertices(maze, size, visited) {
 		vertices: [],
 		entry: [],
 		exit: [],
-		visited: []
+		visited: [],
+		originalMaze: maze
 	};
 
 	for (let i = 0; i < maze.cells.length; i++) {
 		for (let j = 0; j < maze.cells[i].leftSide.length; j++) {
-			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].leftSide[j], size));
+			convertedMaze.vertices.push(.95 * convertVertex(maze.cells[i].leftSide[j], size));
 		}
 		for (let j = 0; j < maze.cells[i].rightSide.length; j++) {
-			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].rightSide[j], size));
+			convertedMaze.vertices.push(.95 * convertVertex(maze.cells[i].rightSide[j], size));
 		}
 		for (let j = 0; j < maze.cells[i].topSide.length; j++) {
-			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].topSide[j], size));
+			convertedMaze.vertices.push(.95 * convertVertex(maze.cells[i].topSide[j], size));
 		}
 		for (let j = 0; j < maze.cells[i].bottomSide.length; j++) {
-			convertedMaze.vertices.push(.9 * convertVertex(maze.cells[i].bottomSide[j], size));
+			convertedMaze.vertices.push(.95 * convertVertex(maze.cells[i].bottomSide[j], size));
 		}
 	}
 
 	for (let i = 0; i < maze.entryCell.sides.length; i++) {
-		convertedMaze.entry.push(.9 * convertVertex(maze.entryCell.sides[i], size));
+		convertedMaze.entry.push(.95 * convertVertex(maze.entryCell.sides[i], size));
 	}
 
 	for (let i = 0; i < maze.exitCell.sides.length; i++) {
-		convertedMaze.exit.push(.9 * convertVertex(maze.exitCell.sides[i], size));
+		convertedMaze.exit.push(.95 * convertVertex(maze.exitCell.sides[i], size));
 	}
 
 	// for(let i = 0; i < visited.length; i++) {
@@ -466,4 +485,18 @@ function convertToVertices(maze, size, visited) {
 	// }
 	
 	return convertedMaze;
+}
+
+function solveMaze() {
+	let maze = mazeArray.originalMaze;
+
+	let startingPoint = maze.entryCell;
+
+	let path = searchPath(startingPoint);
+}
+
+function searchPath(startingPoint) {
+	for(let i = 0; i < 4; i++) {
+		
+	}
 }
