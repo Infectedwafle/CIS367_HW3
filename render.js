@@ -489,14 +489,86 @@ function convertToVertices(maze, size, visited) {
 
 function solveMaze() {
 	let maze = mazeArray.originalMaze;
+	let visited = [];
 
-	let startingPoint = maze.entryCell;
+	let startingPoint = findCell(maze, maze.entryCell.x, maze.entryCell.y);
+	let mazePath = searchPath(maze, startingPoint, maze.exitCell.x, maze.exitCell.y, visited);
 
-	let path = searchPath(startingPoint);
+	console.log('mazePath', mazePath);
 }
 
-function searchPath(startingPoint) {
-	for(let i = 0; i < 4; i++) {
-		
+function searchPath(maze, cell, x, y, visited) {
+	let mazePath = [];
+	visited.push(cell);
+
+	if(cell.x === x && cell.y === y) {
+		return cell
+	} else {
+		for(let i = 0; i < 4; i++) {
+			switch(i) {
+				case 0:
+					if(cell.leftSide.length === 0) {
+						let leftCell = findCell(maze, cell.x - 1, cell.y);
+						let leftVisited = visited.find((cell) => {
+							return cell.x === leftCell.x && cell.y === leftCell.y;
+						});
+
+						if(!leftVisited) {
+							let leftPath = searchPath(maze, leftCell, x, y, visited);
+
+							if(leftPath) {
+								mazePath.push(leftCell);
+							}
+						}
+					}
+				case 1:
+					if(cell.topSide.length === 0) {
+						let topCell = findCell(maze, cell.x, cell.y + 1);
+						let topVisited = visited.find((cell) => {
+							return cell.x === topCell.x && cell.y === topCell.y;
+						});
+
+						if(!topVisited) {
+							let topPath = searchPath(maze, topCell, x, y, visited);
+
+							if(topPath) {
+								mazePath.push(topCell);
+							}
+						}
+					}
+				case 2:
+					if(cell.rightSide.length === 0) {
+						let rightCell = findCell(maze, cell.x + 1, cell.y);
+						let rightVisited = visited.find((cell) => {
+							return cell.x === rightCell.x && cell.y === rightCell.y;
+						});
+
+						if(!rightVisited) {
+							let rightPath = searchPath(maze, rightCell, x, y, visited);
+
+							if(rightPath) {
+								mazePath.push(rightCell);
+							}
+						}
+					}
+				case 3:
+					if(cell.bottomSide.length === 0) {
+						let bottomCell = findCell(maze, cell.x, cell.y - 1);
+						let bottomVisited = visited.find((cell) => {
+							return cell.x === bottomCell.x && cell.y === bottomCell.y;
+						});
+
+						if(!bottomVisited) {
+							let bottomPath = searchPath(maze, bottomCell, x, y, visited);
+
+							if(bottomPath) {
+								mazePath.push(bottomCell);
+							}
+						}
+					}
+			}
+		}
 	}
+
+	return mazePath;
 }
