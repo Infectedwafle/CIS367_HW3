@@ -39,7 +39,7 @@ function main() {
 
 function drawScene() {
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	gl.viewport(0, 0, 512, 512);
+	gl.viewport(0, 0, 800, 800);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	drawMaze();
@@ -239,6 +239,7 @@ function setupMaze(size) {
 				topSide: [],
 				bottomSide: []
 			}
+
 			cell.bottomSide.push(i, j);
 			cell.bottomSide.push(i + 1, j);
 			cell.rightSide.push(i + 1, j);
@@ -469,7 +470,7 @@ function removeSides(cell, dir, second) {
 
 
 function convertVertex(num, size) {
-	let canvasSize = 256;
+	let canvasSize = 800;
 	return ((num * ((canvasSize * 2) / size)) - canvasSize) / canvasSize;
 }
 
